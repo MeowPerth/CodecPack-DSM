@@ -3,7 +3,7 @@
 > 让 DSM 7.2.2+ 重新拥有 **HEVC / H.264 / AAC** 编解码能力的替换套件（SPK）。
 > 用官方 AME 3.1.0 的激活组件 + **FFmpeg 9.0.2** 重新组装成 `CodecPack`，直接顶替 Advanced Media Extensions。
 
-**当前版本：99.0.0-9999** ｜ 已实测：`DSM 7.4-90075 / x86_64`（也提供 aarch64 包）
+**当前版本：99.0.0-10000** ｜ 已实测：`DSM 7.4-90075 / x86_64`（也提供 aarch64 包）
 
 ---
 
@@ -25,14 +25,14 @@ Surveillance Video Extension。结果是：
 
 | 文件 | 大小 | 平台 |
 |---|---|---|
-| `CodecPack-x86_64-99.0.0-9999.spk` | 97 MB | Intel / AMD（`x86_64`） |
-| `CodecPack-aarch64-99.0.0-9999.spk` | 82 MB | `rtd1296` / `rtd1619b` / `armada37xx` |
+| `CodecPack-x86_64-99.0.0-10000.spk` | 97 MB | Intel / AMD（`x86_64`） |
+| `CodecPack-aarch64-99.0.0-10000.spk` | 82 MB | `rtd1296` / `rtd1619b` / `armada37xx` |
 
-**下载**：[Releases · v99.0.0-9999](https://github.com/MeowPerth/CodecPack-DSM/releases/tag/v99.0.0-9999)（附 `SHA256SUMS`）
+**下载**：[Releases · v99.0.0-10000](https://github.com/MeowPerth/CodecPack-DSM/releases/tag/v99.0.0-10000)（附 `SHA256SUMS`）
 
 ```
-818ae27eb077a9711251dd1dc94db51d4faa3f6a97a8bd2fce33a4bf61ee92ab  CodecPack-x86_64-99.0.0-9999.spk
-f1cba3d1d01514adb89dd6172278bdc61a42acaaadaaf95242c0247c8d202e17  CodecPack-aarch64-99.0.0-9999.spk
+bbe2ac50a606b35c8061cdb1efedbbab2692b709ded38ca2c26f6b089fe79058  CodecPack-x86_64-99.0.0-10000.spk
+c2a28fd361e3f4b695b00243bd4cf727dd97321ee60462bc9a272b4b8e24e729  CodecPack-aarch64-99.0.0-10000.spk
 ```
 
 内含：
@@ -44,6 +44,7 @@ f1cba3d1d01514adb89dd6172278bdc61a42acaaadaaf95242c0247c8d202e17  CodecPack-aarc
 | aom / dav1d / vpx / opus / lame / vorbis … | 随包 | AV1/VP9/音频 |
 | `libsynoame-license.so` | AME 3.1.0-3005 | 已 patch，5 个校验函数恒返回 1 |
 | glibc | 2.28（Debian 10） | 随包携带，见下文"为什么要带 glibc" |
+| `pack/usr/bin/convert` | shim | 图片缩略图入口（官方 AME 由在线 codec pack 下发），转发到 ImageMagick 7，HEIC 可解 |
 
 ## 安装
 
@@ -51,7 +52,7 @@ SSH 上去，先卸官方包，再装替换包：
 
 ```sh
 sudo synopkg uninstall CodecPack
-sudo synopkg install /path/to/CodecPack-x86_64-99.0.0-9999.spk
+sudo synopkg install /path/to/CodecPack-x86_64-99.0.0-10000.spk
 ```
 
 包是纯文件包（`startable="no"`），`conf/privilege` 只声明 `{"defaults": {"run-as": "package"}}`，
@@ -77,6 +78,7 @@ sudo synopkg install /path/to/CodecPack-x86_64-99.0.0-9999.spk
 | HEVC 解码出一帧 JPEG（缩略图路径） | **0.146 s** ✅ |
 | `libx265` / `libx264` | 均在 ✅ |
 | 激活文件 / `pack_status.conf` | `{"status": "installed"}` ✅ |
+| 图片缩略图（HEIC → `SYNOPHOTO_THUMB_*`） | 三档全部生成 ✅ |
 
 ## 工作原理
 
@@ -204,7 +206,8 @@ src/
 - **纯软件编解码**，没有把 VAAPI/QSV 接进 AME 的调用路径。ARM 机型跑 1080p 以上会很吃力。
 - `package.tgz` 用 **xz**（与官方 AME 3.1.0 一致），所以 `os_min_ver` 定在 7.2。
 - Synology Photos 只用 CodecPack 生成缩略图；浏览器里播放 HEVC 仍取决于浏览器本身。
-- Photos / Video Station 的 UI 级效果未做端到端验证（测试机上没有照片库）。
+- 图片缩略图（JPEG/PNG/HEIC）依赖 ImageMagick：包内 `pack/usr/bin/convert` 只是 shim，
+  需要装 SynoCommunity 的 `imagemagick` 包；只有 DSM 自带的 `/usr/bin/convert` 时 HEIC 解不了。
 
 ## 故障排查
 
@@ -232,6 +235,28 @@ sudo ln -sfn /var/packages/CodecPack/target/pack/bin/ffmpeg41 /usr/syno/bin/ffmp
 ```
 
 > 卸载本包后这个链接会悬空，记得删掉或指回 `/usr/bin/ffmpeg`。
+
+### 图片缩略图全部失败（`convert: No such file or directory`）
+
+官方 AME 的 `pack/usr/bin/convert`（ImageMagick）**不在 `libsynoame` 里**，而是安装后由
+Synology 的在线 codec pack 下载补进去的。自己组包时漏掉这个路径，`synothumb` 对每张
+JPEG/PNG/HEIC 都会报：
+
+```
+Failed to run /var/packages/CodecPack/target/pack/usr/bin/convert ... ret=[-1], No such file or directory
+```
+
+99.0.0-10000 起包内已带 `pack/usr/bin/convert` 与 `identify` 两个 shim：优先用
+SynoCommunity 的 ImageMagick 7（带 libheif，HEIC/HEIF 可解），否则回退 DSM 自带的
+`/usr/bin/convert`（只能解 JPEG/PNG）。所以要让 HEIC 正常：
+
+```sh
+# Package Center 里装 imagemagick（SynoCommunity），或：
+ls -l /var/packages/imagemagick/target/bin/magick
+```
+
+补上后点开一张新照片，或对目录跑一次 `synomkthumb -R <dir>`，
+`@eaDir` 下应出现 `SYNOPHOTO_THUMB_{SM,M,XL}.jpg`。
 
 ### 包已安装但 DSM 不认为包里有 HEVC
 
@@ -272,5 +297,8 @@ ls -l /var/packages/CodecPack/target/pack/HAS_*
 
 ## 变更记录
 
+- **99.0.0-10000** — 补上 `pack/usr/bin/convert` / `identify`：官方 AME 的图片缩略图入口，
+  由在线 codec pack 下发，自制包必须自带；shim 转发到 ImageMagick 7（HEIC 可用），
+  postinst 增加依赖检测。
 - **99.0.0-9999** — 首个版本：FFmpeg 9.0.2 + 包内 glibc 2.28 + AME 3.1.0 激活组件；
   补上 `pack/HAS_*` 标记，使 DSM 媒体守护进程认可包内编码能力。

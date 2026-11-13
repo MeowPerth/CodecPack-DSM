@@ -1,0 +1,10 @@
+#!/bin/sh
+# Counterpart of ./convert (see the comment there). Official AME ships
+# pack/usr/bin/identify as well; some DSM code paths use it for probing.
+for im in /var/packages/imagemagick/target/bin/magick \
+          /var/packages/imagemagick/target/bin/convert \
+          /usr/bin/convert; do
+    [ -x "$im" ] && exec "$im" identify "$@"
+done
+echo "CodecPack: no ImageMagick found." >&2
+exit 127

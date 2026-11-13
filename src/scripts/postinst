@@ -39,4 +39,17 @@ else
     echo "           sudo ln -sfn $THUMB_TARGET $THUMB"
 fi
 
+# --- pack/usr/bin/convert ---------------------------------------------
+# synothumb / synomkthumbd run this for every *image* thumbnail. Official AME
+# gets a Synology ImageMagick from the online codec-pack download; we ship a
+# shim that borrows the system one. HEIC/HEIF needs the SynoCommunity build
+# (linked against libheif); DSM's own /usr/bin/convert decodes JPEG/PNG only.
+if [ -x /var/packages/imagemagick/target/bin/magick ]; then
+    echo "pack/usr/bin/convert -> ImageMagick (SynoCommunity), HEIC ok"
+else
+    echo "WARNING: 'imagemagick' package not found."
+    echo "         Photo / HEIC thumbnails will fail until it is installed:"
+    echo "           Package Center -> imagemagick (SynoCommunity)"
+fi
+
 exit 0

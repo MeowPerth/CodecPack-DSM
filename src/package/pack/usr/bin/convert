@@ -1,0 +1,18 @@
+#!/bin/sh
+# DSM's synothumb / synomkthumbd / synoflvconv run:
+#   /var/packages/CodecPack/target/pack/usr/bin/convert
+# Official AME fills this slot with a Synology-built ImageMagick that arrives
+# via the online "codec pack" download, not via the .spk itself. A
+# self-assembled pack therefore has to provide it, otherwise every image
+# thumbnail (JPEG/PNG/HEIC) fails with "No such file or directory".
+#
+# Prefer SynoCommunity's ImageMagick 7 (built with libheif, so HEIC/HEIF work),
+# then fall back to any DSM ImageMagick -- that one decodes JPEG/PNG only.
+for im in /var/packages/imagemagick/target/bin/magick \
+          /var/packages/imagemagick/target/bin/convert \
+          /usr/bin/convert; do
+    [ -x "$im" ] && exec "$im" "$@"
+done
+echo "CodecPack: no ImageMagick found; photo thumbnails will not work." >&2
+echo "CodecPack: install the 'imagemagick' package from Package Center." >&2
+exit 127

@@ -12,7 +12,7 @@ ROOT=$(cd "$(dirname "$0")" && pwd)
 SRC="$ROOT/src"
 BUILD="$ROOT/build/$ARCH"
 OUT="$ROOT/out"
-PKG_VER="99.0.0-9999"
+PKG_VER="99.0.0-10000"
 
 case "$ARCH" in
   x86_64)
@@ -80,6 +80,7 @@ sed "s/^arch=.*/arch=\"${INFO_ARCH}\"/" "$SRC/package/pack/INFO" > "$PKG/pack/IN
 
 chmod +x "$PKG/pack/bin/ffmpeg41" "$PKG/pack/bin/ffprobe" \
          "$PKG/bin/synocodectool" \
+         "$PKG/pack/usr/bin/convert" "$PKG/pack/usr/bin/identify" \
          "$PKG/usr/bin/synoame-bin-check-license" \
          "$PKG/usr/bin/synoame-bin-request-codec"
 
