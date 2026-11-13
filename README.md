@@ -28,6 +28,13 @@ Surveillance Video Extension。结果是：
 | `CodecPack-x86_64-99.0.0-9999.spk` | 97 MB | Intel / AMD（`x86_64`） |
 | `CodecPack-aarch64-99.0.0-9999.spk` | 82 MB | `rtd1296` / `rtd1619b` / `armada37xx` |
 
+**下载**：[Releases · v99.0.0-9999](https://github.com/MeowPerth/CodecPack-DSM/releases/tag/v99.0.0-9999)（附 `SHA256SUMS`）
+
+```
+6e6fdd7fafad07b0f31a99ec1bb73ae09fde737e0481078326deed1d73e026dc  CodecPack-x86_64-99.0.0-9999.spk
+be7212f028510f7f3fd0b3a0e6635babc0495d76a164b187c0fc1590de12f91d  CodecPack-aarch64-99.0.0-9999.spk
+```
+
 内含：
 
 | 组件 | 版本 | 说明 |
