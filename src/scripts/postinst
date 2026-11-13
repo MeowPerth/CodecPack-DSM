@@ -1,0 +1,22 @@
+#!/bin/sh
+
+source "$(dirname $0)"/common
+
+SYNOPKG_PKGDEST="${SYNOPKG_PKGDEST:-/var/packages/CodecPack/target}"
+ACT_DIR="${PKG_PATH}/etc/activation"
+
+# Install activation files
+mkdir -p "$ACT_DIR" 2>/dev/null
+if [ -d "$ACT_DIR" ]; then
+    cp "$SYNOPKG_PKGDEST/activation/activation.conf" "$ACT_DIR/" 2>/dev/null
+    cp "$SYNOPKG_PKGDEST/activation/offline_license.json" "$ACT_DIR/" 2>/dev/null
+    echo "Activation files installed to $ACT_DIR"
+else
+    echo "Could not create $ACT_DIR — run manually:"
+    echo "  sudo mkdir -p $ACT_DIR && sudo cp $SYNOPKG_PKGDEST/activation/* $ACT_DIR/"
+fi
+
+# Set codec pack status to installed (codecs are pre-bundled)
+SetPackStatus installed
+
+exit 0
