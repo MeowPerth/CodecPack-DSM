@@ -206,6 +206,41 @@ src/
 - Synology Photos 只用 CodecPack 生成缩略图；浏览器里播放 HEVC 仍取决于浏览器本身。
 - Photos / Video Station 的 UI 级效果未做端到端验证（测试机上没有照片库）。
 
+## 故障排查
+
+### 缩略图不生成，或只对 H.264 有效
+
+DSM 的 `synothumb` / `synomkthumbd` / `synomkflvd` / `synoflvconv` 除了用
+`pack/bin/ffmpeg41`，还会走 `/usr/syno/bin/ffmpeg-thumb` 这个路径。部分系统上它被
+手工指向了 DSM 自带的 `/usr/bin/ffmpeg`（FFmpeg **4.1.9**）——那个构建只有
+`hevc_v4l2m2m` 编码器、**没有 HEVC 解码器**，拿它做缩略图会直接失败：
+
+```
+$ /usr/bin/ffmpeg -i test.hevc -frames:v 1 out.jpg
+test.hevc: Invalid data found when processing input
+```
+
+把这条路径指到本包的 FFmpeg 9.0.2 即可：
+
+```sh
+# 先确认它现在指向哪儿
+ls -l /usr/syno/bin/ffmpeg-thumb
+/usr/syno/bin/ffmpeg-thumb -version
+
+# 指到本包
+sudo ln -sfn /var/packages/CodecPack/target/pack/bin/ffmpeg41 /usr/syno/bin/ffmpeg-thumb
+```
+
+> 卸载本包后这个链接会悬空，记得删掉或指回 `/usr/bin/ffmpeg`。
+
+### 包已安装但 DSM 不认为包里有 HEVC
+
+检查 `pack/HAS_*` 标记是否存在：
+
+```sh
+ls -l /var/packages/CodecPack/target/pack/HAS_*
+```
+
 ## 法律与分发
 
 - `libsynoame-license.so` 是 **Synology Inc. 的财产**，本项目对其做了二进制修改。
