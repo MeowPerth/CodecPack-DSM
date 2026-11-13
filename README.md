@@ -31,8 +31,8 @@ Surveillance Video Extension。结果是：
 **下载**：[Releases · v99.0.0-9999](https://github.com/MeowPerth/CodecPack-DSM/releases/tag/v99.0.0-9999)（附 `SHA256SUMS`）
 
 ```
-6e6fdd7fafad07b0f31a99ec1bb73ae09fde737e0481078326deed1d73e026dc  CodecPack-x86_64-99.0.0-9999.spk
-be7212f028510f7f3fd0b3a0e6635babc0495d76a164b187c0fc1590de12f91d  CodecPack-aarch64-99.0.0-9999.spk
+818ae27eb077a9711251dd1dc94db51d4faa3f6a97a8bd2fce33a4bf61ee92ab  CodecPack-x86_64-99.0.0-9999.spk
+f1cba3d1d01514adb89dd6172278bdc61a42acaaadaaf95242c0247c8d202e17  CodecPack-aarch64-99.0.0-9999.spk
 ```
 
 内含：
