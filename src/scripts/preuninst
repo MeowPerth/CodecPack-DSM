@@ -1,2 +1,24 @@
 #!/bin/sh
+
+source "$(dirname $0)"/common
+
+# Restore /usr/syno/bin/ffmpeg-thumb to what it was before postinst touched it.
+# Deleting it needs root, which the package does not have -> print the command.
+THUMB=/usr/syno/bin/ffmpeg-thumb
+THUMB_TARGET="${SYNOPKG_PKGDEST:-/var/packages/CodecPack/target}/pack/bin/ffmpeg41"
+THUMB_ORIG="$PKG_VAR_PATH/ffmpeg-thumb.orig"
+
+if [ "$(readlink "$THUMB" 2>/dev/null)" = "$THUMB_TARGET" ]; then
+    if [ -f "$THUMB_ORIG" ]; then
+        orig=$(cat "$THUMB_ORIG")
+    else
+        orig=ABSENT
+    fi
+    if [ "$orig" = "ABSENT" ]; then
+        echo "restore: sudo rm -f $THUMB"
+    else
+        echo "restore: sudo ln -sfn $orig $THUMB"
+    fi
+fi
+
 exit 0

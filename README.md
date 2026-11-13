@@ -241,6 +241,28 @@ sudo ln -sfn /var/packages/CodecPack/target/pack/bin/ffmpeg41 /usr/syno/bin/ffmp
 ls -l /var/packages/CodecPack/target/pack/HAS_*
 ```
 
+### 为什么包不自动改 `/usr/syno/bin/ffmpeg-thumb`
+
+包在 `postinst` 里会检查这条链接：
+
+- 已经指向本包的 `ffmpeg41` → 日志里打 `ffmpeg-thumb -> CodecPack ffmpeg41 (ok)`
+- 不对 → 打警告 + 一行修复命令，并把原目标记进
+  `/var/packages/CodecPack/var/ffmpeg-thumb.orig`
+
+`preuninst` 读回这个记录，打印对应的还原命令（`ln -sfn <原目标>` 或 `rm -f`）。
+
+**没法做成全自动**，因为 `/usr/syno/bin` 属于 root，而 DSM 7.4 拒绝未签名 SPK 的任何提权：
+
+| 尝试 | 结果 |
+|---|---|
+| `conf/privilege` 加 `ctrl-script`（run-as root） | `319 invalid package privilege content` |
+| `ctrl-script` 改成 run-as package | `319` |
+| 连 `conf/privilege` 都不带（默认 root 脚本） | `319` |
+| `tool` 声明 4755 root（SUID 助手） | `313 failed to revise file attributes` |
+
+（对照：已安装的第三方包 `mediainfo-viewer` 有 4755 文件，说明签名/信任级别是关键，
+不是写法问题。）所以包只能"检测 + 给命令"，不能自己动手。
+
 ## 法律与分发
 
 - `libsynoame-license.so` 是 **Synology Inc. 的财产**，本项目对其做了二进制修改。

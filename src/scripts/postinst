@@ -19,4 +19,24 @@ fi
 # Set codec pack status to installed (codecs are pre-bundled)
 SetPackStatus installed
 
+# --- /usr/syno/bin/ffmpeg-thumb ---------------------------------------
+# synothumb / synomkthumbd / synomkflvd / synoflvconv also call this path.
+# It is root-owned, and DSM refuses to run package scripts as root unless the
+# SPK is signed, so the package can only report the problem and remember the
+# previous value (used by preuninst to print the restore command).
+THUMB=/usr/syno/bin/ffmpeg-thumb
+THUMB_TARGET="/var/packages/CodecPack/target/pack/bin/ffmpeg41"
+THUMB_ORIG="$PKG_VAR_PATH/ffmpeg-thumb.orig"
+
+thumb_cur=$(readlink "$THUMB" 2>/dev/null || echo ABSENT)
+if [ "$thumb_cur" = "$THUMB_TARGET" ]; then
+    echo "ffmpeg-thumb -> CodecPack ffmpeg41 (ok)"
+else
+    [ -f "$THUMB_ORIG" ] || echo "$thumb_cur" > "$THUMB_ORIG" 2>/dev/null || true
+    echo "WARNING: $THUMB points to '${thumb_cur}'."
+    echo "         DSM thumbnails will not use this pack's HEVC decoder."
+    echo "         Fix once with:"
+    echo "           sudo ln -sfn $THUMB_TARGET $THUMB"
+fi
+
 exit 0
