@@ -3,7 +3,7 @@
 > 让 DSM 7.2.2+ 重新拥有 **HEVC / H.264 / AAC** 编解码能力的替换套件（SPK）。
 > 用官方 AME 3.1.0 的激活组件 + **FFmpeg 9.0.2** 重新组装成 `CodecPack`，直接顶替 Advanced Media Extensions。
 
-**当前版本：99.0.0-10000** ｜ 已实测：`DSM 7.4-90075 / x86_64`（也提供 aarch64 包）
+**当前版本：99.0.0-10001** ｜ 已实测：`DSM 7.4-90075 / x86_64`（也提供 aarch64 包）
 
 ---
 
@@ -25,14 +25,14 @@ Surveillance Video Extension。结果是：
 
 | 文件 | 大小 | 平台 |
 |---|---|---|
-| `CodecPack-x86_64-99.0.0-10000.spk` | 97 MB | Intel / AMD（`x86_64`） |
-| `CodecPack-aarch64-99.0.0-10000.spk` | 82 MB | `rtd1296` / `rtd1619b` / `armada37xx` |
+| `CodecPack-x86_64-99.0.0-10001.spk` | 97 MB | Intel / AMD（`x86_64`） |
+| `CodecPack-aarch64-99.0.0-10001.spk` | 82 MB | `rtd1296` / `rtd1619b` / `armada37xx` |
 
-**下载**：[Releases · v99.0.0-10000](https://github.com/MeowPerth/CodecPack-DSM/releases/tag/v99.0.0-10000)（附 `SHA256SUMS`）
+**下载**：[Releases · v99.0.0-10001](https://github.com/MeowPerth/CodecPack-DSM/releases/tag/v99.0.0-10001)（附 `SHA256SUMS`）
 
 ```
-bbe2ac50a606b35c8061cdb1efedbbab2692b709ded38ca2c26f6b089fe79058  CodecPack-x86_64-99.0.0-10000.spk
-c2a28fd361e3f4b695b00243bd4cf727dd97321ee60462bc9a272b4b8e24e729  CodecPack-aarch64-99.0.0-10000.spk
+c0efb21a22527468c103c8004da337bda7057b69639256f375d6c7f9b23a9446  CodecPack-x86_64-99.0.0-10001.spk
+238546d8a60e27c51a0964fa700b3638b1fa86563c3033c544f7cc9b23a2f941  CodecPack-aarch64-99.0.0-10001.spk
 ```
 
 内含：
@@ -52,7 +52,7 @@ SSH 上去，先卸官方包，再装替换包：
 
 ```sh
 sudo synopkg uninstall CodecPack
-sudo synopkg install /path/to/CodecPack-x86_64-99.0.0-10000.spk
+sudo synopkg install /path/to/CodecPack-x86_64-99.0.0-10001.spk
 ```
 
 包是纯文件包（`startable="no"`），`conf/privilege` 只声明 `{"defaults": {"run-as": "package"}}`，
@@ -79,6 +79,7 @@ sudo synopkg install /path/to/CodecPack-x86_64-99.0.0-10000.spk
 | `libx265` / `libx264` | 均在 ✅ |
 | 激活文件 / `pack_status.conf` | `{"status": "installed"}` ✅ |
 | 图片缩略图（HEIC → `SYNOPHOTO_THUMB_*`） | 三档全部生成 ✅ |
+| 视频缩略图（H.264 → `SYNOPHOTO_THUMB_*`） | XL 2276×1280 / M 569×320 / SM 427×240 ✅ |
 
 ## 工作原理
 
@@ -258,6 +259,32 @@ ls -l /var/packages/imagemagick/target/bin/magick
 补上后点开一张新照片，或对目录跑一次 `synomkthumb -R <dir>`，
 `@eaDir` 下应出现 `SYNOPHOTO_THUMB_{SM,M,XL}.jpg`。
 
+### 视频缩略图全部失败（`SYNOPHOTO_THUMB_*.fail`）
+
+视频缩略图和图片走的是同一条 `convert`，但参数写法不同：
+
+```
+# 图片：输入在前
+convert -define registry:...  PIC.HEIC -define jpeg:size=... -thumbnail ... OUT.jpg
+# 视频：选项在前
+convert -define jpeg:size=1280x1280 -thumbnail 1280x1280>^ ... IN.jpg XL.jpg
+```
+
+**ImageMagick 7 只吃第一种**——`-thumbnail` 出现在输入之前会直接 `NoImagesFound`
+（`@ error/operation.c/CLIOption`），于是每段视频都留下
+`SYNOPHOTO_THUMB_{M,SM,XL}.fail`，相册里一片空白。DSM 自带的 ImageMagick 6 两种都吃。
+
+99.0.0-10001 起 `pack/usr/bin/convert` 按扩展名分流：HEIC/HEIF/AVIF → IM7（libheif），
+其余 → IM6（`/usr/bin/convert`），两边都正常。
+
+已经失败过的文件不会自己重试（`.fail` 就是个哨兵），需要：
+
+```sh
+sudo find /volume2/photo -name 'SYNOPHOTO_THUMB_*.fail' -delete
+# 再把源文件 touch 一下，让 synoindexd 重新入队
+sudo touch /volume2/photo/<某个视频>
+```
+
 ### 包已安装但 DSM 不认为包里有 HEVC
 
 检查 `pack/HAS_*` 标记是否存在：
@@ -297,6 +324,9 @@ ls -l /var/packages/CodecPack/target/pack/HAS_*
 
 ## 变更记录
 
+- **99.0.0-10001** — `pack/usr/bin/convert` 改为按扩展名分流：HEIC/HEIF/AVIF 走 IM7，
+  其余走 DSM 自带 IM6。修掉「图片好了、视频缩略图全 .fail」的回归（IM7 不接受
+  `-thumbnail` 在输入之前的写法）。
 - **99.0.0-10000** — 补上 `pack/usr/bin/convert` / `identify`：官方 AME 的图片缩略图入口，
   由在线 codec pack 下发，自制包必须自带；shim 转发到 ImageMagick 7（HEIC 可用），
   postinst 增加依赖检测。

@@ -1,5 +1,5 @@
 package="CodecPack"
-version="99.0.0-10000"
+version="99.0.0-10001"
 os_min_ver="7.2-60110"
 displayname="Advanced Media Extensions"
 description="HEVC/H.264/AAC non-free codec pack for DSM 7. Drop-in replacement for AME 4.0 using FFmpeg 9.0 (software encode/decode) plus Synology's codec activation files."

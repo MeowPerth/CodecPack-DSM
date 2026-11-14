@@ -1,18 +1,23 @@
 #!/bin/sh
-# DSM's synothumb / synomkthumbd / synoflvconv run:
-#   /var/packages/CodecPack/target/pack/usr/bin/convert
-# Official AME fills this slot with a Synology-built ImageMagick that arrives
-# via the online "codec pack" download, not via the .spk itself. A
-# self-assembled pack therefore has to provide it, otherwise every image
-# thumbnail (JPEG/PNG/HEIC) fails with "No such file or directory".
+# DSM's synothumb / synomkthumbd / synoflvconv run this for every thumbnail.
+# Official AME fills this slot with a Synology ImageMagick delivered by its
+# online codec-pack download. A self-assembled pack has to provide it.
 #
-# Prefer SynoCommunity's ImageMagick 7 (built with libheif, so HEIC/HEIF work),
-# then fall back to any DSM ImageMagick -- that one decodes JPEG/PNG only.
-for im in /var/packages/imagemagick/target/bin/magick \
-          /var/packages/imagemagick/target/bin/convert \
-          /usr/bin/convert; do
-    [ -x "$im" ] && exec "$im" "$@"
+# synothumb calls ImageMagick in two different argument styles:
+#   images : -define registry:...  SRC  -define jpeg:size=... -thumbnail ... OUT
+#   videos : -define jpeg:size=... -thumbnail ... -quality ... -type ... IN OUT
+# ImageMagick 7 only accepts the second style once an input image exists --
+# with "-thumbnail" before the input it dies with "NoImagesFound". DSM's own
+# ImageMagick 6 (the one the stock AME pack uses) accepts both.
+# HEIC/HEIF/AVIF can only be decoded by the SynoCommunity ImageMagick 7
+# (libheif), everything else is safer on IM6 => dispatch by file extension.
+for a in "$@"; do
+    case "$a" in
+        *.heic|*.HEIC|*.heif|*.HEIF|*.avif|*.AVIF)
+            exec /var/packages/imagemagick/target/bin/magick "$@" ;;
+    esac
 done
-echo "CodecPack: no ImageMagick found; photo thumbnails will not work." >&2
-echo "CodecPack: install the 'imagemagick' package from Package Center." >&2
+[ -x /usr/bin/convert ] && exec /usr/bin/convert "$@"
+[ -x /var/packages/imagemagick/target/bin/magick ] && exec /var/packages/imagemagick/target/bin/magick "$@"
+echo "CodecPack: no ImageMagick found; thumbnails will not work." >&2
 exit 127

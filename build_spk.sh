@@ -12,7 +12,7 @@ ROOT=$(cd "$(dirname "$0")" && pwd)
 SRC="$ROOT/src"
 BUILD="$ROOT/build/$ARCH"
 OUT="$ROOT/out"
-PKG_VER="99.0.0-10000"
+PKG_VER="99.0.0-10001"
 
 case "$ARCH" in
   x86_64)
